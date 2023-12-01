@@ -1,0 +1,119 @@
+package SDM.springmvc.basic.repository;
+
+import SDM.springmvc.basic.domain.MemberBoardInfo;
+import SDM.springmvc.basic.domain.MemberStackInfo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Slf4j
+@Repository
+@RequiredArgsConstructor
+public class MemberBoardRepository {
+
+    private final JdbcTemplate jdbctemplate;
+    private final UserRepository userRepository;
+
+    public String getStudentName(Long studentId) {
+        String sql = "SELECT student_name FROM student WHERE student_id = ?";
+        return jdbctemplate.queryForObject(sql, new Object[]{studentId}, String.class);
+    }
+
+    private final RowMapper<MemberBoardInfo> rowMapper = (rs, rowNum) -> {
+        MemberBoardInfo memberBoardInfo = new MemberBoardInfo();
+        memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
+        memberBoardInfo.setUsername(rs.getString("username"));
+        memberBoardInfo.setTitle(rs.getString("title"));
+        memberBoardInfo.setStackInfoList(findStacksByMemberUserId(memberBoardInfo.getMemberBoardId()));
+        return memberBoardInfo;
+    };
+
+    public List<MemberBoardInfo> findMemberAll() { // 멤버카드 전체조회
+        String sql = "SELECT * FROM member_board_info";
+        return jdbctemplate.query(sql, rowMapper);
+    }
+
+    public MemberBoardInfo findMemberById(Long userId){ // 멤버카드 하나조회
+        String sql = "SELECT * FROM member_board_info WHERE member_board_id = ?";
+        return jdbctemplate.queryForObject(sql, rowMapper, userId);
+    }
+
+    @Transactional
+    public Long saveMember(MemberBoardInfo memberBoardInfo, Long studentId) { //멤버카드 생성
+        if (memberBoardInfo == null || studentId == null) {
+            throw new IllegalArgumentException("MemberBoardInfo and studentId cannot be null");
+        }
+        String username = getStudentName(studentId);
+        if (memberBoardInfo.getUsername() == null) {
+            throw new IllegalArgumentException("Username cannot be null");
+        }
+        memberBoardInfo.setTitle("개발자 " + username);
+        String sql = "INSERT INTO member_board_info(username, title, content, student_id) VALUES (?,?,?,?)";
+        Long postId = null;
+
+        try {
+            jdbctemplate.update(sql, username, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), studentId);
+            postId = jdbctemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+        } catch (DataAccessException e) {
+            log.error("Error occurred while inserting data into member_board_info table : " + e.getMessage());
+            return null;
+        }
+
+        if (memberBoardInfo.getStackInfoList() != null) {
+            for (MemberStackInfo stackInfo : memberBoardInfo.getStackInfoList()) {
+                String sqlStack = "INSERT INTO mem_stack(member_board_id,stack_id) VALUES(?,?)";
+                try {
+                    jdbctemplate.update(sqlStack, postId, stackInfo.getStackId());
+                } catch (DataAccessException e) {
+                    log.error("Error occurred while inserting data into mem_stack table : " + e.getMessage());
+                }
+            }
+        }
+        return postId;
+    }
+
+    public List<MemberStackInfo> findStacksByMemberUserId(Long userId) { //멤버카드에 있는 스택찾기
+        String sql = "SELECT si.* FROM stack_info si INNER JOIN mem_stack msi ON si.stack_id = msi.stack_id WHERE msi.member_board_id = ?";
+        return jdbctemplate.query(sql, new Object[]{userId}, (rs, rowNum) -> {
+            MemberStackInfo stackInfo = new MemberStackInfo();
+            stackInfo.setStackId(rs.getLong("stack_id"));
+            stackInfo.setName(rs.getString("stack_name"));
+            stackInfo.setImg(rs.getString("img"));
+            return stackInfo;
+        } );
+    }
+
+    public List<MemberBoardInfo> findMemberPostsByStack(Long stackId) { //스택으로 멤버 찾기
+        String sql = "SELECT * FROM member_board_info mbi INNER JOIN mem_stack msi ON mbi.user_id = msi.user_id WHERE msi.stack_id = ?";
+        return jdbctemplate.query(sql, new Object[]{stackId}, (rs, rowNum) -> {
+            MemberBoardInfo memberBoardInfo = new MemberBoardInfo();
+            memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
+            memberBoardInfo.setTitle(rs.getString("title"));
+            memberBoardInfo.setUsername(rs.getString("username"));
+            memberBoardInfo.setStackInfoList(findStacksByMemberUserId(memberBoardInfo.getMemberBoardId()));
+            return memberBoardInfo;
+        });
+    }
+
+    public void updateMemberBoard(MemberBoardInfo memberBoardInfo) {
+        String sql = "UPDATE member_board_info SET tilte = ?, content =? WHERE member_board_id = ?";
+        jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
+
+        for (MemberStackInfo stackInfo : memberBoardInfo.getStackInfoList()) {
+            String stackSql;
+            if (stackInfo.isDeleted()) {
+                stackSql = "DELETE FROM mem_stack WHERE member_board_id = ? AND stack_id = ?";
+                jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
+            } else if (stackInfo.isNew()) {
+                stackSql = "INSERT INTO mem_stack(member_board_id, stack_id) VALUES (?,?)";
+                jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
+            }
+        }
+    }
+}
