@@ -55,7 +55,7 @@ public class UserController {//여기서 로그인 회원가입 다
         String id = userInfo.getId();
         String pw = userInfo.getPw();
         JdbcTemplateLogin jdbcTemplateLogin = new JdbcTemplateLogin(dataSourceConfig.dataSource());
-        try {git 
+        try {
             String result = jdbcTemplateLogin.findById(id).toString();
             log.info("result = {}", result);
             if (pw.equals(result)) {
