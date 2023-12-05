@@ -14,7 +14,8 @@ public class CorsConfig {
     public FilterRegistrationBean<CorsFilter> corsFilterRegistrationBean() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
+        config.addAllowedOrigin("http://3.39.21.137:8080");
+        config.addAllowedOrigin("http://3.39.21.137");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setMaxAge(6000L);
