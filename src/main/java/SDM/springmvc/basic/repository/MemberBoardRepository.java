@@ -118,7 +118,7 @@ public class MemberBoardRepository {
     }
 
     public void updateMemberBoard(MemberBoardInfo memberBoardInfo) {
-        String sql = "UPDATE member_board_info SET tilte = ?, content =? WHERE member_board_id = ?";
+        String sql = "UPDATE member_board_info SET title = ?, content =? WHERE member_board_id = ?";
         jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
 
         for (MemberStackInfo stackInfo : memberBoardInfo.getStackInfoList()) {
