@@ -5,6 +5,7 @@ import SDM.springmvc.basic.domain.MemberStackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -22,7 +23,15 @@ public class MemberBoardRepository {
 
     public String getStudentName(Long studentId) {
         String sql = "SELECT student_name FROM student WHERE student_id = ?";
-        return jdbctemplate.queryForObject(sql, new Object[]{studentId}, String.class);
+        try {
+            return jdbctemplate.queryForObject(sql, new Object[]{studentId}, String.class);
+        } catch (EmptyResultDataAccessException e) {
+            System.out.println("학생을 찾을 수 없습니다: " + studentId);
+            return null;
+        } catch (Exception e){
+            System.out.println("검색하는동안 오류가 발생했습니다: " + e.getMessage());
+            return null;
+        }
     }
 
     private final RowMapper<MemberBoardInfo> rowMapper = (rs, rowNum) -> {
@@ -47,11 +56,18 @@ public class MemberBoardRepository {
     @Transactional
     public Long saveMember(MemberBoardInfo memberBoardInfo, Long studentId) { //멤버카드 생성
         if (memberBoardInfo == null || studentId == null) {
-            throw new IllegalArgumentException("MemberBoardInfo and studentId cannot be null");
+            throw new IllegalArgumentException("MemberBoardInfo와 studentId null이 될 수 없습니다.");
         }
-        String username = getStudentName(studentId);
-        if (memberBoardInfo.getUsername() == null) {
-            throw new IllegalArgumentException("Username cannot be null");
+        String username = null;
+        try{
+            username = getStudentName(studentId);
+        } catch (EmptyResultDataAccessException e){
+            log.error("학생 ID에 해당하는 학생을 찾을 수 없습니다: " + studentId);
+            return null;
+        }
+
+        if (username == null) {
+            throw new IllegalArgumentException("Username은 null이 될 수 없습니다.");
         }
         memberBoardInfo.setTitle("개발자 " + username);
         String sql = "INSERT INTO member_board_info(username, title, content, student_id) VALUES (?,?,?,?)";
@@ -61,7 +77,7 @@ public class MemberBoardRepository {
             jdbctemplate.update(sql, username, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), studentId);
             postId = jdbctemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
         } catch (DataAccessException e) {
-            log.error("Error occurred while inserting data into member_board_info table : " + e.getMessage());
+            log.error("MemberBoardInfo 테이블에 데이터를 삽입하는 도중 오류 발생 : " + e.getMessage());
             return null;
         }
 
