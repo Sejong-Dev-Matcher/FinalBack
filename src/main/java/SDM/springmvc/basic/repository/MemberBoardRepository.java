@@ -28,7 +28,7 @@ public class MemberBoardRepository {
         } catch (EmptyResultDataAccessException e) {
             System.out.println("학생을 찾을 수 없습니다: " + studentId);
             return null;
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("검색하는동안 오류가 발생했습니다: " + e.getMessage());
             return null;
         }
@@ -48,7 +48,7 @@ public class MemberBoardRepository {
         return jdbctemplate.query(sql, rowMapper);
     }
 
-    public MemberBoardInfo findMemberById(Long userId){ // 멤버카드 하나조회
+    public MemberBoardInfo findMemberById(Long userId) { // 멤버카드 하나조회
         String sql = "SELECT * FROM member_board_info WHERE member_board_id = ?";
         return jdbctemplate.queryForObject(sql, rowMapper, userId);
     }
@@ -59,9 +59,9 @@ public class MemberBoardRepository {
             throw new IllegalArgumentException("MemberBoardInfo와 studentId null이 될 수 없습니다.");
         }
         String username = null;
-        try{
+        try {
             username = getStudentName(studentId);
-        } catch (EmptyResultDataAccessException e){
+        } catch (EmptyResultDataAccessException e) {
             log.error("학생 ID에 해당하는 학생을 찾을 수 없습니다: " + studentId);
             return null;
         }
@@ -102,7 +102,7 @@ public class MemberBoardRepository {
             stackInfo.setName(rs.getString("stack_name"));
             stackInfo.setImg(rs.getString("img"));
             return stackInfo;
-        } );
+        });
     }
 
     public List<MemberBoardInfo> findMemberPostsByStack(Long stackId) { //스택으로 멤버 찾기
@@ -118,17 +118,34 @@ public class MemberBoardRepository {
     }
 
     public void updateMemberBoard(MemberBoardInfo memberBoardInfo) {
+        if (memberBoardInfo == null) {
+            log.error("MemberBoardInfo는 null이 될 수 없습니다.");
+            return;
+        }
         String sql = "UPDATE member_board_info SET title = ?, content =? WHERE member_board_id = ?";
-        jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
-
-        for (MemberStackInfo stackInfo : memberBoardInfo.getStackInfoList()) {
-            String stackSql;
-            if (stackInfo.isDeleted()) {
-                stackSql = "DELETE FROM mem_stack WHERE member_board_id = ? AND stack_id = ?";
-                jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
-            } else if (stackInfo.isNew()) {
-                stackSql = "INSERT INTO mem_stack(member_board_id, stack_id) VALUES (?,?)";
-                jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
+        try {
+            jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
+        } catch (DataAccessException e) {
+            log.error("업데이트 하는동안 에러 발생 member_board_info 테이블");
+            return;
+        }
+        if (memberBoardInfo.getStackInfoList() != null) {
+            for (MemberStackInfo stackInfo : memberBoardInfo.getStackInfoList()) {
+                if (stackInfo == null) {
+                    continue;
+                }
+                String stackSql;
+                try {
+                    if (stackInfo.isDeleted()) {
+                        stackSql = "DELETE FROM mem_stack WHERE member_board_id = ? AND stack_id = ?";
+                        jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
+                    } else if (stackInfo.isNew()) {
+                        stackSql = "INSERT INTO mem_stack(member_board_id, stack_id) VALUES (?,?)";
+                        jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
+                    }
+                } catch (DataAccessException e) {
+                    log.error("업데이트 하는동안 에러 발생 mem_stack 테이블");
+                }
             }
         }
     }

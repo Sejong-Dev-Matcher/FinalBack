@@ -18,8 +18,13 @@ public class JdbcTemplateLogin {
     }
 
     public String findById(String id) {
-        String result = jdbcTemplate.queryForObject("select pw from student where loginId = ?", String.class, id);
-        log.info("result = {}", result);
-        return result;
+        try {
+            String result = jdbcTemplate.queryForObject("select pw from student where loginId = ?", String.class, id);
+            log.info("result = {}", result);
+            return result;
+        } catch (Exception e) {
+            log.error("데이터베이스에 사용자 존재하지 않음");
+            return "exception";
+        }
     }
 }
