@@ -41,7 +41,7 @@ public class MemberBoardController {
     }
 
     @PutMapping("/memberboard/update/{student_Id}")
-    public String updateMemberPost(@PathVariable Long student_Id, @ModelAttribute MemberBoardInfo memberBoardInfo) {
+    public String updateMemberPost(@PathVariable Long student_Id, @RequestBody MemberBoardInfo memberBoardInfo) {
         MemberBoardInfo existingBoardInfo = memberBoardRepository.getMemberPost(student_Id);
         if (existingBoardInfo != null) {
             existingBoardInfo.setMemberBoardId(memberBoardInfo.getMemberBoardId());
