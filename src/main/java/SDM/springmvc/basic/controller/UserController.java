@@ -65,7 +65,8 @@ public class UserController {//여기서 로그인 회원가입 다
                 throw new Exception("fail to join");
             }
         } catch (Exception e) {
-            return "exception"; //회원가입 하고와라
+            log.info(e.getMessage());
+            return e.getMessage(); //회원가입 하고와라
         }
     }
     @RequestMapping(value = "/user/login", method = RequestMethod.OPTIONS)
