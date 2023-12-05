@@ -25,6 +25,7 @@ public class UserController {//여기서 로그인 회원가입 다
     public String userController(@RequestBody UserInfo userInfo) throws URISyntaxException {//아 여기서 자소서도 쓰기로했지
         UserParsing userParsing = new UserParsing();
         DataSourceConfig dataSourceConfig = new DataSourceConfig();
+        JdbcTemplateLogin jdbcTemplateLogin = new JdbcTemplateLogin(dataSourceConfig.dataSource());
         String id = userInfo.getId();
         String pw = userInfo.getPw();
         log.info("id = {}, pw = {}", id, pw);
@@ -37,6 +38,8 @@ public class UserController {//여기서 로그인 회원가입 다
             if (auth.equals("true")) {  //만약 데이터베이스에 존재안하고, 입력한 비밀번호가 학사정보와 같다면,
                 UserRepository userRepository = new UserRepository(dataSourceConfig.dataSource());
                 userRepository.save(id, pw, jsonObject); //우리 데이터베이스에 저장
+                Long student_id = jdbcTemplateLogin.findStudentId(id);
+                userRepository.updateMemberBoardId(student_id, student_id);
                 return "ok";
             } else {
                 throw new Exception("fail to join");

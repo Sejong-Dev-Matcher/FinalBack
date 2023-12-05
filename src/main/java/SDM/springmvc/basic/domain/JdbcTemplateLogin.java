@@ -27,4 +27,13 @@ public class JdbcTemplateLogin {
             return "exception";
         }
     }
+
+    public Long findStudentId(String id) {
+        try {
+            Long StudentId = jdbcTemplate.queryForObject("select student_id from student where loginId = ?", Long.class, id);
+            return StudentId;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 }
