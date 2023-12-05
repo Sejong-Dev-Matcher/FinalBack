@@ -10,8 +10,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
+
 
 @Slf4j
 @Repository
@@ -20,7 +25,6 @@ public class MemberBoardRepository {
 
     private final JdbcTemplate jdbctemplate;
     private final UserRepository userRepository;
-
     public String getStudentName(Long studentId) {
         String sql = "SELECT student_name FROM student WHERE student_id = ?";
         try {
@@ -34,10 +38,37 @@ public class MemberBoardRepository {
         }
     }
 
+    public MemberBoardInfo getMemberPost(Long student_Id){
+        String sql = "SELECT * FROM member_board_info WHERE student_id = ?";
+        try {
+            return jdbctemplate.queryForObject(sql, new Object[]{student_Id}, new RowMapper<MemberBoardInfo>() {
+                @Override
+                public MemberBoardInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    MemberBoardInfo memberBoardInfo = new MemberBoardInfo();
+                    memberBoardInfo.setStudentId(rs.getLong("student_Id"));
+                    memberBoardInfo.setContent(rs.getString("content"));
+                    memberBoardInfo.setUsername(rs.getString("username"));
+                    memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
+                    memberBoardInfo.setTitle(rs.getString("title"));
+                    memberBoardInfo.setStackInfoList(findStacksByMemberUserId(memberBoardInfo.getMemberBoardId()));
+                    return memberBoardInfo;
+                }
+            });
+        } catch (EmptyResultDataAccessException e) {
+            log.error("학생을 찾을 수 없습니다: " + student_Id);
+            return null;
+        } catch (Exception e) {
+            log.error("검색하는동안 오류가 발생했습니다." + e.getMessage());
+            return null;
+        }
+    }
+
     private final RowMapper<MemberBoardInfo> rowMapper = (rs, rowNum) -> {
         MemberBoardInfo memberBoardInfo = new MemberBoardInfo();
-        memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
+        memberBoardInfo.setStudentId(rs.getLong("student_Id"));
+        memberBoardInfo.setContent(rs.getString("content"));
         memberBoardInfo.setUsername(rs.getString("username"));
+        memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
         memberBoardInfo.setTitle(rs.getString("title"));
         memberBoardInfo.setStackInfoList(findStacksByMemberUserId(memberBoardInfo.getMemberBoardId()));
         return memberBoardInfo;
@@ -124,6 +155,7 @@ public class MemberBoardRepository {
         }
         String sql = "UPDATE member_board_info SET title = ?, content =? WHERE member_board_id = ?";
         try {
+            log.info("Title: " + memberBoardInfo.getTitle());
             jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
         } catch (DataAccessException e) {
             log.error("업데이트 하는동안 에러 발생 member_board_info 테이블: " + e.getMessage());

@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MemberBoardInfo {
     private long memberBoardId;
+    private long studentId;
     private String username;
     private String title; // 썸네일에 나올 개발자 ***
     private String content;

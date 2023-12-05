@@ -2,16 +2,20 @@ package SDM.springmvc.basic.controller;
 
 import SDM.springmvc.basic.domain.MemberBoardInfo;
 import SDM.springmvc.basic.domain.MemberBoardRequest;
+import SDM.springmvc.basic.repository.MemberBoardRepository;
 import SDM.springmvc.basic.service.MemberBoardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+
 
 @RestController
 @CrossOrigin(originPatterns = "http://3.39.21.137:8080")
 public class MemberBoardController {
     @Autowired
     private MemberBoardService memberBoardService;
+    @Autowired
+    private MemberBoardRepository memberBoardRepository;
 
     @PostMapping("/memberboard/post") // 게시글 작성
     public void post(@RequestBody MemberBoardRequest memberBoardRequest) {
@@ -38,8 +42,17 @@ public class MemberBoardController {
 
     @PutMapping("/memberboard/update/{student_Id}")
     public String updateMemberPost(@PathVariable Long student_Id, @ModelAttribute MemberBoardInfo memberBoardInfo) {
-        memberBoardInfo.setMemberBoardId(student_Id);
-        memberBoardService.updateMemberPost(memberBoardInfo);
-        return "redirect:/memberboard/post?" + student_Id;
+        MemberBoardInfo existingBoardInfo = memberBoardRepository.getMemberPost(student_Id);
+        if (existingBoardInfo != null) {
+            existingBoardInfo.setMemberBoardId(memberBoardInfo.getMemberBoardId());
+            existingBoardInfo.setContent(memberBoardInfo.getContent());
+            existingBoardInfo.setUsername(memberBoardInfo.getUsername());
+            existingBoardInfo.setStackInfoList(memberBoardInfo.getStackInfoList());
+            existingBoardInfo.setTitle(memberBoardInfo.getTitle());
+            memberBoardRepository.updateMemberBoard(existingBoardInfo);
+        } else{
+            return "redirect:/error";
+        }
+        return "redirect:/memberboard/post/" + student_Id;
     }
 }
