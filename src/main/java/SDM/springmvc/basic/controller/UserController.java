@@ -49,23 +49,26 @@ public class UserController {//여기서 로그인 회원가입 다
 
 
     //로그인 데이터베이스에 저장안돼있으면 exception 출력 -> 회원가입하고 다시 와야됨
-    @PostMapping("/user/login")
+    @RequestMapping(value = "/user/login", method = {RequestMethod.GET, RequestMethod.POST})
     public String doLogin(@RequestBody UserInfo userInfo) {
         DataSourceConfig dataSourceConfig = new DataSourceConfig();
         String id = userInfo.getId();
         String pw = userInfo.getPw();
+        log.info("id = {}", id);
+        log.info("pw = {}", pw);
         JdbcTemplateLogin jdbcTemplateLogin = new JdbcTemplateLogin(dataSourceConfig.dataSource());
         try {
             String result = jdbcTemplateLogin.findById(id).toString();
             log.info("result = {}", result);
             if (pw.equals(result)) {
+                log.info("pw = {}", pw);
                 log.info("ok");
                 return "ok";
             } else {
                 throw new Exception("fail to join");
             }
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage());
             return e.getMessage(); //회원가입 하고와라
         }
     }
