@@ -51,6 +51,7 @@ public class MemberBoardRepository {
                     memberBoardInfo.setMemberBoardId(rs.getLong("member_board_id"));
                     memberBoardInfo.setTitle(rs.getString("title"));
                     memberBoardInfo.setStackInfoList(findStacksByMemberUserId(memberBoardInfo.getMemberBoardId()));
+                    log.info("Title form DB: " + rs.getString("title"));
                     return memberBoardInfo;
                 }
             });
