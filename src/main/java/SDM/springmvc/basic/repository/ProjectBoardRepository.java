@@ -4,6 +4,8 @@ import SDM.springmvc.basic.domain.ProjectBoardInfo;
 import SDM.springmvc.basic.domain.ProjectStackInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -46,7 +48,16 @@ public class ProjectBoardRepository {
             projectBoardInfo.setNowpeople(1);
             String sql = "INSERT INTO project_board_info(student_id, title, content, maxpeople, nowpeople) VALUES (?,?,?,?,?)";
             jdbcTemplate.update(sql, projectBoardInfo.getStudentId(), projectBoardInfo.getTitle(), projectBoardInfo.getContent(), projectBoardInfo.getMaxpeople(), projectBoardInfo.getNowpeople());
-            Long postId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+            Long postId = null;
+            try{
+                postId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+            } catch (EmptyResultDataAccessException e){
+                log.error("ID를 찾을 수 없습니다: " + e.getMessage());
+                throw new IllegalStateException("projectBoardInfo 테이블에서 삽입된 ID를 찾을 수 없습니다.", e);
+            } catch (IncorrectResultSizeDataAccessException e){
+                log.error("삽입 후 결과 사이즈가 잘못 됨:" + e.getMessage());
+                throw new IllegalStateException("projectBoardInfo 테이블에 삽입되었지만 결과 크기가 잘못됐습니다.", e);
+            }
 
             if (projectBoardInfo.getStackInfoList() != null) {
                 for (ProjectStackInfo stackInfo : projectBoardInfo.getStackInfoList()) {
