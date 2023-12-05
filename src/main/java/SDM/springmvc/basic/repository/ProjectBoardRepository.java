@@ -109,7 +109,7 @@ public class ProjectBoardRepository {
     }
 
     public void updateProjectBoard(ProjectBoardInfo projectBoardInfo) {
-        String sql = "UPDATE member_board_info SET tilte = ?, content =? WHERE member_board_id = ?";
+        String sql = "UPDATE member_board_info SET title = ?, content =? WHERE member_board_id = ?";
         jdbcTemplate.update(sql, projectBoardInfo.getTitle(), projectBoardInfo.getContent(), projectBoardInfo.getProjectBoardId());
 
         for (ProjectStackInfo stackInfo : projectBoardInfo.getStackInfoList()) {
