@@ -126,7 +126,8 @@ public class MemberBoardRepository {
         try {
             jdbctemplate.update(sql, memberBoardInfo.getTitle(), memberBoardInfo.getContent(), memberBoardInfo.getMemberBoardId());
         } catch (DataAccessException e) {
-            log.error("업데이트 하는동안 에러 발생 member_board_info 테이블");
+            log.error("업데이트 하는동안 에러 발생 member_board_info 테이블: " + e.getMessage());
+            e.printStackTrace();
             return;
         }
         if (memberBoardInfo.getStackInfoList() != null) {
@@ -144,7 +145,7 @@ public class MemberBoardRepository {
                         jdbctemplate.update(stackSql, memberBoardInfo.getMemberBoardId(), stackInfo.getStackId());
                     }
                 } catch (DataAccessException e) {
-                    log.error("업데이트 하는동안 에러 발생 mem_stack 테이블");
+                    log.error("업데이트 하는동안 에러 발생 mem_stack 테이블: " + e.getMessage());
                 }
             }
         }
