@@ -3,12 +3,17 @@ package SDM.springmvc.basic.service;
 import SDM.springmvc.basic.domain.MemberBoardInfo;
 import SDM.springmvc.basic.repository.MemberBoardRepository;
 import SDM.springmvc.basic.repository.UserRepository;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
 import java.util.List;
 
+@Getter
+@Setter
 @Service
 @RequiredArgsConstructor
 public class MemberBoardService {

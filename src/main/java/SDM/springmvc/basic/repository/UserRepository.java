@@ -52,7 +52,7 @@ public class UserRepository { //여기서 자소서,학번(loginId),pw,major,이
     }
 
     public void updateMemberBoardId(Long studentId, Long memberBoardId) {
-        String sql = "UPDATE student SET member_board_id = ? WHERE student_id = ?";
+        String sql = "UPDATE student SET member_board_id = ? WHERE student_id = ? and member_board_id is null";
         jdbcTemplate.update(sql, memberBoardId, studentId);
     }
 }
